@@ -1,6 +1,24 @@
 # Changelog
 
-## Version 1.1.0 (Release Date: 2023-11-11))
+## Version 1.1.1 (Release Date: 2023-11-11)
+
+### New Features
+
+- **Obtain Public IP Address**: Find IP address using icanhazip.com instead
+
+### Changes
+
+- None
+
+### Bug Fixes
+
+- None
+
+### Deprecations
+
+- None
+
+## Version 1.1.0 (Release Date: 2023-11-11)
 
 ### New Features
 

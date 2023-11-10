@@ -72,7 +72,7 @@ namespace wgConfigEcho
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "sh",
+                    FileName = "/bin/sh",
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -84,7 +84,7 @@ namespace wgConfigEcho
             process.Start();
 
             // Run a command to get the public IP address
-            process.StandardInput.WriteLine("curl -s ifconfig.me");
+            process.StandardInput.WriteLine("curl -4 icanhazip.com");
 
             // Read the output of the command
             string output = process.StandardOutput.ReadToEnd();
