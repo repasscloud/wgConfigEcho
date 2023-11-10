@@ -1,62 +1,47 @@
-﻿using System.Diagnostics;
-using System.Net;
-using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 
 namespace wgConfigEcho
 {
     class Program
     {
+        [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
         static void Main(string[] args)
         {
-            if (args.Length < 1)
+            if (args.Length == 0 || !int.TryParse(args[0], out int numberOfPeers) || numberOfPeers <= 0)
             {
-                Console.WriteLine("Please provide the public IP address as a command-line argument.");
+                Console.WriteLine("Please provide a valid number of peers as a command-line argument.");
                 return;
             }
 
-            string publicIp = args[0];
-            string url = $"http://{publicIp}:8080/";
-            Console.WriteLine($"Server URL: {url}");
+            // Create a JSON object to hold the data
+            var jsonData = new JsonObject();
 
-            // Read the PNG file into a base64 string
-            string pngFilePath = "/app/html/peer1.png";
-            string pngBase64 = FileToBase64(pngFilePath);
-
-            // Read the text file into a base64 string
-            string textFilePath = "/app/html/peer1.config";
-            string textBase64 = FileToBase64(textFilePath);
-
-            // Start listening on port 8080 in the background
-            using (HttpListener listener = new HttpListener())
+            // Loop through each peer and read PNG and CONF files
+            for (int i = 1; i <= numberOfPeers; i++)
             {
-                listener.Prefixes.Add(url);
-                listener.Start();
-                Console.WriteLine($"Listening for requests at {url}");
+                string peerKey = $"peer{i}";
 
-                // Print the process ID
-                Console.WriteLine($"PID: {Process.GetCurrentProcess().Id}");
+                string pngFilePath = $"/app/html/{peerKey}.png";
+                string pngBase64 = FileToBase64(pngFilePath);
 
-                while (true)
-                {
-                    // Wait for a request
-                    HttpListenerContext context = listener.GetContext();
-                    HttpListenerRequest request = context.Request;
+                string confFilePath = $"/app/html/{peerKey}.conf";
+                string confBase64 = FileToBase64(confFilePath);
 
-                    // Check if the request is a GET request
-                    if (request.HttpMethod == "GET")
-                    {
-                        // Prepare the JSON response
-                        string jsonResponse = $"{{\"png\": \"{pngBase64}\", \"conf\": \"{textBase64}\"}}";
-                        byte[] responseBytes = Encoding.UTF8.GetBytes(jsonResponse);
-
-                        // Send the response
-                        context.Response.ContentType = "application/json";
-                        context.Response.ContentEncoding = Encoding.UTF8;
-                        context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
-                        context.Response.Close();
-                    }
-                }
+                // Add peer data to the JSON object
+                jsonData.Add(peerKey, new { png = pngBase64, conf = confBase64 });
             }
+
+            // Serialize the JSON object to a string
+            string jsonString = JsonSerializer.Serialize(jsonData, new JsonSerializerOptions
+            {
+                WriteIndented = true // for pretty-printing
+            });
+
+            // Write the JSON string to values.json
+            File.WriteAllText("/app/html/values.json", jsonString);
+
+            Console.WriteLine("values.json has been created.");
         }
 
         static string FileToBase64(string filePath)
@@ -74,4 +59,7 @@ namespace wgConfigEcho
             }
         }
     }
+
+    // Custom class to represent the JSON structure
+    class JsonObject : System.Collections.Generic.Dictionary<string, object> { }
 }
