@@ -1,6 +1,6 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using System.Text;
-using System.Diagnostics;
 
 namespace wgConfigEcho
 {
@@ -8,25 +8,33 @@ namespace wgConfigEcho
     {
         static void Main(string[] args)
         {
-            // Obtain the public IP address
-            string publicIp = GetPublicIpAddress();
+            if (args.Length < 1)
+            {
+                Console.WriteLine("Please provide the public IP address as a command-line argument.");
+                return;
+            }
+
+            string publicIp = args[0];
             string url = $"http://{publicIp}:8080/";
             Console.WriteLine($"Server URL: {url}");
 
             // Read the PNG file into a base64 string
-            string pngFilePath = "/app/config/peer1/peer1.png";
+            string pngFilePath = "/app/html/peer1.png";
             string pngBase64 = FileToBase64(pngFilePath);
 
             // Read the text file into a base64 string
-            string textFilePath = "/app/config/peer1/peer1.config";
+            string textFilePath = "/app/html/peer1.config";
             string textBase64 = FileToBase64(textFilePath);
 
-            // Start listening on port 8080
+            // Start listening on port 8080 in the background
             using (HttpListener listener = new HttpListener())
             {
                 listener.Prefixes.Add(url);
                 listener.Start();
                 Console.WriteLine($"Listening for requests at {url}");
+
+                // Print the process ID
+                Console.WriteLine($"PID: {Process.GetCurrentProcess().Id}");
 
                 while (true)
                 {
@@ -64,35 +72,6 @@ namespace wgConfigEcho
                 Console.WriteLine($"Error reading file: {ex.Message}");
                 return string.Empty;
             }
-        }
-
-        static string GetPublicIpAddress()
-        {
-            Process process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "/bin/sh",
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-
-            process.Start();
-
-            // Run a command to get the public IP address
-            process.StandardInput.WriteLine("curl -4 icanhazip.com");
-
-            // Read the output of the command
-            string output = process.StandardOutput.ReadToEnd();
-
-            process.WaitForExit();
-
-            // Trim any leading or trailing whitespaces
-            return output.Trim();
         }
     }
 }
